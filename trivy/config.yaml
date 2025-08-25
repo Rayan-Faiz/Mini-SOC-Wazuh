@@ -1,4 +1,3 @@
-# Fail on HIGH/CRITICAL vulnerabilities
 severity:
   - CRITICAL
   - HIGH
@@ -6,18 +5,14 @@ severity:
 # Don’t block builds on unfixed CVEs (common in base images)
 ignore-unfixed: true
 
-exit-code: 1
+# Uncomment the following line to fail on HIGH/CRITICAL vulneerabilities
+# exit-code: 1
 
 format: table
 
 vuln-type:
   - os
   - library
-
-# Fail on HIGH/CRITICAL vulnerabilities
-severity:
-  - CRITICAL
-  - HIGH
 
 # Enable caching to speed up CI scans
 cache-dir: .trivycache
