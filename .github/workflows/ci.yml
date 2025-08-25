@@ -33,6 +33,9 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
           format: 'table'
+          scanners: 'vuln'
+          timeout: 15m
+
 
   test:
     runs-on: self-hosted
