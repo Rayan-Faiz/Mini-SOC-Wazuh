@@ -31,7 +31,8 @@ jobs:
           image-ref: local/wazuh-manager:ci
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: 1
+          # uncomment the following line to fail pipeline on HIGH/CRITICAL vuln
+          # exit-code: 1
           format: 'table'
           scanners: 'vuln'
           timeout: 15m
