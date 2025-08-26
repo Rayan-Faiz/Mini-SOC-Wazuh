@@ -1,13 +1,12 @@
 services:
   traefik:
-    deploy:
-      replicas: 0   # disable traefik in CI tests
-
+    environment:
+      - "LE_EMAIL=${ACME_EMAIL:-admin@ecorp.com}"
+      - "TLS_MODE=${TLS_MODE:-selfsigned}"
+    extra_hosts:
+      - "localhost:127.0.0.1"
   wazuh-dashboard:
-    ports:
-      - "5601:5601"   # expose dashboard directly
-    labels: []        # remove traefik labels so CI doesn’t wait for it
-
-  wazuh-manager:
-    ports:
-      - "55000:55000" # API exposed for testing if needed
+    labels:
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=${TLS_MODE:-selfsigned}"
+      - "traefik.http.routers.dashboard.rule=Host(`localhost`)"
