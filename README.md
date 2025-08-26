@@ -1,6 +1,6 @@
-# Mini SOC — Wazuh on Docker Swarm (CI/CD with GitHub Actions)
+# Mini SOC — Wazuh
 
-A production-grade, reproducible reference implementation for **Part One — Build a Mini SOC**.
+A production-grade, reproducible reference implementation for **Wazuh as a Mini SOC**.
 It deploys the **Wazuh stack** (Indexer, Manager, Dashboard) onto **Docker Swarm**, fronted by **Traefik** with HTTPS, and wired into a full **CI/CD** pipeline with **Trivy** scanning and **Selenium/API tests**.
 
 > Works on self-hosted GitHub runners and locally. Secrets are handled via **Swarm Secrets** and **Ansible Vault**.
@@ -109,7 +109,6 @@ ansible-playbook -i ansible/inventories/prod ansible/playbooks/teardown.yml
 
 ## Secrets & TLS
 
-- **Do not** hardcode secrets in Git.
 - Use:
   - GitHub Secrets → injected to jobs
   - **Ansible Vault** for inventories/group_vars
@@ -173,15 +172,7 @@ Rotation:
 
 ---
 
-## Evidence (placeholders)
-- `evidence/ci-success.png` — CI run green
-- `evidence/wazuh-dashboard.png` — masked creds
-- `evidence/trivy-report.json` — example report
-- `evidence/ansible-deploy.txt` — successful deploy log
-
----
-
-## How to Run CI Locally (approximation)
+## How to Run CI Locally
 
 Use `act` (optional) or run the Make targets:
 ```bash
