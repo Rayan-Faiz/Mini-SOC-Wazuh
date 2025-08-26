@@ -47,11 +47,13 @@ jobs:
         run: docker compose -f stack/wazuh-stack.yml -f stack/compose.test.override.yml up -d
       - name: Wait for dashboard to be up
         run: |
-          for i in {1..60}; do
-            curl -sk https://localhost/ >/dev/null && exit 0
+          for i in {1..120}; do
+            curl -s http://localhost:5601/ >/dev/null && exit 0
             sleep 5
           done
-          echo "Dashboard not reachable"; docker ps; exit 1
+          echo "Dashboard not reachable"
+          docker ps
+          exit 1
       - name: Run Selenium tests
         run: pytest -q tests/selenium/test_dashboard.py
       - name: Run API health probe
