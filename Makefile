@@ -1,8 +1,8 @@
 .PHONY: build up-test down-test test lint scan
 
 build:
-	docker build --platform=linux/amd64 -t local/wazuh-manager:latest docker/manager
-	docker build --platform=linux/amd64 -t local/wazuh-dashboard:latest docker/dashboard
+	docker build -t local/wazuh-manager:latest docker/manager
+	docker build -t local/wazuh-dashboard:latest docker/dashboard
 
 up-test:
 	docker compose -f stack/wazuh-stack.yml -f stack/compose.test.override.yml up -d
