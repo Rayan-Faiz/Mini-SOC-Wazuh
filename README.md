@@ -26,11 +26,11 @@ It deploys the **Wazuh stack** (Indexer, Manager, Dashboard) onto **Docker Swarm
 
 ## Quickstart (Local Demo)
 
-> Requires: Docker (20+), Docker Compose v2, Python 3.10+, Chrome + Chromedriver (or use containers), Make.
+> Requires: Docker (20+), Docker Compose v2, Python 3.10+, Chrome + Chromedriver (or use containers), Make, ansible-lint, yamllint.
 
 ```bash
 # 1) Clone
-git clone 
+git clone https://github.com/Rayan-Faiz/Mini-SOC-Wazuh-CI-CD.git 
 cd mini-soc-wazuh-swarm
 
 # 2) (Optional) Build local images (you can skip to use upstream)
