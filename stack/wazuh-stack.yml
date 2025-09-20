@@ -24,8 +24,18 @@ services:
     networks:
       - wazuh_front
 
+  cert-generator:
+    image: wazuh/wazuh-cert-tool:latest
+    container_name: cert-generator
+    command: generate
+    volumes:
+      - ./wazuh-certificates/:/certs
+    restart: "no"
+
   wazuh-indexer:
     image: wazuh/wazuh-indexer:4.8.2
+    depends_on:
+      - cert-generator
     environment:
       - cluster.name=wazuh-cluster
       - discovery.type=single-node
@@ -43,6 +53,9 @@ services:
 
   wazuh-manager:
     image: wazuh/wazuh-manager:4.8.2
+    depends_on:
+      - cert-generator
+      - wazuh-indexer
     environment:
       - INDEXER_URL=https://wazuh-indexer:9200
     volumes:
@@ -61,10 +74,12 @@ services:
     depends_on:
       - wazuh-manager
       - wazuh-indexer
+    environment:
+      - WAZUH_API_URL=https://wazuh-manager:55000
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.dashboard.rule=Host(`wazuh.local`)"
       - "traefik.http.services.dashboard.loadbalancer.server.port=5601"
     networks:
       - wazuh_front
