@@ -7,7 +7,7 @@ services:
     command:
       - "--api.dashboard=true"
       - "--providers.file.filename=/etc/traefik/traefik.yml"
-      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.filename=/etc/traefik/dynamic/dynamic.yml"
       - "--entrypoints.websecure.address=:443"
       - "--serversTransport.insecureSkipVerify=true"
     ports:
