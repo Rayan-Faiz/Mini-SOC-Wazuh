@@ -31,7 +31,7 @@ It deploys the **Wazuh stack** (Indexer, Manager, Dashboard) onto **Docker Swarm
 ```bash
 # 1) Clone
 git clone https://github.com/Rayan-Faiz/Mini-SOC-Wazuh-CI-CD.git 
-cd mini-soc-wazuh-swarm
+cd Mini-SOC-Wazuh-CI-CD
 
 # 2) (Optional) Build local images (you can skip to use upstream)
 make build
