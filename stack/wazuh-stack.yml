@@ -23,24 +23,18 @@ services:
         constraints: [node.role == manager]
     networks:
       - wazuh_front
-
-  cert-generator:
-    image: wazuh/wazuh-certs-generator:0.0.2
-    container_name: cert-generator
-    command: generate
-    volumes:
-      - ./wazuh-certificates/:/certificates
-      - ./certs.yml:/config/certs.yml
-    restart: "no"
-
+  
   wazuh-indexer:
     image: wazuh/wazuh-indexer:4.8.2
-    depends_on:
-      - cert-generator
     environment:
       - cluster.name=wazuh-cluster
       - discovery.type=single-node
       - node.name=wazuh-indexer
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.indexer.entrypoints=websecure"
+      - "traefik.http.routers.indexer.rule=Host(`indexer.local`)"
+      - "traefik.http.services.indexer.loadbalancer.server.port=9200"
     healthcheck:
       test: ["CMD", "curl", "-k", "-f", "https://localhost:9200"]
       interval: 30s
@@ -48,20 +42,23 @@ services:
       retries: 10
     volumes:
       - wazuh_indexer_data:/var/lib/wazuh-indexer
-      - ./wazuh-certificates/:/usr/share/wazuh-indexer/certs
     networks:
       - wazuh_back
+      - wazuh_front
 
   wazuh-manager:
     image: wazuh/wazuh-manager:4.8.2
     depends_on:
-      - cert-generator
       - wazuh-indexer
     environment:
-      - INDEXER_URL=https://wazuh-indexer:9200
+      - INDEXER_URL=http://wazuh-indexer:9200
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.manager.entrypoints=websecure"
+      - "traefik.http.routers.manager.rule=Host(`manager.local`)"
+      - "traefik.http.services.manager.loadbalancer.server.port=55000"
     volumes:
       - wazuh_manager_data:/var/ossec/data
-      - ./wazuh-certificates/:/etc/ssl/certs
     healthcheck:
       test: ["CMD", "bash", "-c", "ps aux | grep -q '[o]ssec-analysisd'"]
       interval: 30s
@@ -69,6 +66,7 @@ services:
       retries: 10
     networks:
       - wazuh_back
+      - wazuh_front
 
   wazuh-dashboard:
     image: wazuh/wazuh-dashboard:4.8.2
