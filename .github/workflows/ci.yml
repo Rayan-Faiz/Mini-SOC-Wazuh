@@ -43,6 +43,9 @@ jobs:
     needs: build_and_scan
     steps:
       - uses: actions/checkout@v4
+      - name: Add local DNS entries
+        run: |
+          echo "127.0.0.1 wazuh.local manager.local indexer.local" | sudo tee -a /etc/hosts
       - name: Bring up ephemeral test env
         run: docker compose -f stack/wazuh-stack.yml -f stack/compose.test.override.yml up -d
       - name: Wait for dashboard to be up
