@@ -26,43 +26,38 @@ services:
 
   wazuh-indexer:
     image: wazuh/wazuh-indexer:4.8.2
-#    platform: linux/amd64
     environment:
-      - "cluster.name=wazuh-cluster"
+      - cluster.name=wazuh-cluster
+      - discovery.type=single-node
+      - node.name=wazuh-indexer
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:9200"]
       interval: 30s
       timeout: 10s
       retries: 10
     volumes:
       - wazuh_indexer_data:/var/lib/wazuh-indexer
+      - ./wazuh-certificates/:/usr/share/wazuh-indexer/certs
     networks:
       - wazuh_back
-    deploy:
-      restart_policy:
-        condition: on-failure
 
   wazuh-manager:
     image: wazuh/wazuh-manager:4.8.2
-#    platform: linux/amd64
     environment:
       - INDEXER_URL=https://wazuh-indexer:9200
     volumes:
       - wazuh_manager_data:/var/ossec/data
+      - ./wazuh-certificates/:/etc/ssl/certs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:55000"]
+      test: ["CMD", "bash", "-c", "ps aux | grep -q '[o]ssec-analysisd'"]
       interval: 30s
       timeout: 10s
       retries: 10
     networks:
       - wazuh_back
-    deploy:
-      restart_policy:
-        condition: on-failure
 
   wazuh-dashboard:
     image: wazuh/wazuh-dashboard:4.8.2
-#    platform: linux/amd64
     depends_on:
       - wazuh-manager
       - wazuh-indexer
