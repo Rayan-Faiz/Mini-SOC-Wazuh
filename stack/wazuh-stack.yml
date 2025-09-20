@@ -25,11 +25,12 @@ services:
       - wazuh_front
 
   cert-generator:
-    image: wazuh/wazuh-cert-tool:latest
+    image: wazuh/wazuh-certs-generator:0.0.2
     container_name: cert-generator
     command: generate
     volumes:
-      - ./wazuh-certificates/:/certs
+      - ./wazuh-certificates/:/certificates
+      - ./certs.yml:/config/certs.yml
     restart: "no"
 
   wazuh-indexer:
