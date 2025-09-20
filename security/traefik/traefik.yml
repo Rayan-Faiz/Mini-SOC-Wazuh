@@ -5,7 +5,7 @@ api:
 
 providers:
   file:
-    filename: /etc/traefik/dynamic.yml
+    filename: /etc/traefik/dynamic/dynamic.yml
 
 entryPoints:
   websecure:
