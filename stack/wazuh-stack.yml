@@ -1,4 +1,3 @@
-
 services:
   # Certificate generator (runs once and exits)
   wazuh-cert-generator:
@@ -15,10 +14,30 @@ services:
       - wazuh_back
     restart: "no"
 
+  # Securityadmin init (runs once)
+  wazuh-securityadmin:
+    image: wazuh/wazuh-manager:4.8.2
+    depends_on:
+      - wazuh-indexer
+      - wazuh-cert-generator
+    command: >
+      bash -c "
+      until curl -k https://wazuh-indexer:9200 -u admin:SecretPassword; do
+        echo 'Waiting for indexer...'; sleep 5;
+      done;
+      /var/ossec/bin/securityadmin.sh -e -u admin -p SecretPassword -r
+      "
+    volumes:
+      - wazuh_certs:/etc/ossec/certs
+    networks:
+      - wazuh_back
+    restart: "no"
+
   wazuh-indexer:
     image: wazuh/wazuh-indexer:4.8.2
     depends_on:
       - wazuh-cert-generator
+      - wazuh-securityadmin
     environment:
       - cluster.name=wazuh-cluster
       - discovery.type=single-node
@@ -39,6 +58,7 @@ services:
     depends_on:
       - wazuh-indexer
       - wazuh-cert-generator
+      - wazuh-securityadmin
     environment:
       - INDEXER_URL=https://wazuh-indexer:9200
       - INDEXER_USERNAME=admin
@@ -62,6 +82,7 @@ services:
       - wazuh-manager
       - wazuh-indexer
       - wazuh-cert-generator
+      - wazuh-securityadmin
     environment:
       - INDEXER_USERNAME=admin
       - INDEXER_PASSWORD=SecretPassword
@@ -72,15 +93,43 @@ services:
       - wazuh_certs:/usr/share/wazuh-dashboard/certs
     networks:
       - wazuh_back
+      - wazuh_front
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wazuh-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.wazuh-dashboard.rule=Host(`wazuh.local`)"
+      - "traefik.http.routers.wazuh-dashboard.tls.certresolver=myresolver"
+      - "traefik.http.services.wazuh-dashboard.loadbalancer.server.port=5601"
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
 
+  traefik:
+    image: traefik:v3.1
+    command:
+      - "--api.dashboard=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=you@example.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - wazuh_front
+
 volumes:
   wazuh_manager_data:
   wazuh_indexer_data:
   wazuh_certs:
+  traefik_letsencrypt:
 
 networks:
   wazuh_back:
+  wazuh_front:
