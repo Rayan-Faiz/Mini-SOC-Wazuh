@@ -1,40 +1,29 @@
-# Base stack usable by both Swarm and local compose (v2)
-# Compose v2 will accept deploy keys for local testing, but ignores Swarm-only semantics.
+version: "3.9"
 
 services:
-  traefik:
-    image: traefik:v3.1
-    command:
-      - "--api.dashboard=true"
-      - "--providers.file.filename=/etc/traefik/traefik.yml"
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--entrypoints.websecure.address=:443"
-      - "--serversTransport.insecureSkipVerify=true"
-    ports:
-      - "443:443"
-      - "8080:8080" # Traefik dashboard
+  # Certificate generator (runs once and exits)
+  wazuh-cert-generator:
+    image: wazuh/wazuh-cert-tool:4.8.2
+    environment:
+      - WAZUH_CERTS_GEN=true
+      - WAZUH_CERTS_OUTPUT=/certs
+      - WAZUH_INDEXER_NODES=wazuh-indexer
+      - WAZUH_MANAGER_NODES=wazuh-manager
+      - WAZUH_DASHBOARD_NODES=wazuh-dashboard
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ../security/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ../security/traefik/dynamic.yml:/etc/traefik/dynamic/dynamic.yml:ro
-      - traefik_letsencrypt:/letsencrypt
-    deploy:
-      placement:
-        constraints: [node.role == manager]
+      - wazuh_certs:/certs
     networks:
-      - wazuh_front
-  
+      - wazuh_back
+    restart: "no"
+
   wazuh-indexer:
     image: wazuh/wazuh-indexer:4.8.2
+    depends_on:
+      - wazuh-cert-generator
     environment:
       - cluster.name=wazuh-cluster
       - discovery.type=single-node
       - node.name=wazuh-indexer
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.indexer.entrypoints=websecure"
-      - "traefik.http.routers.indexer.rule=Host(`indexer.local`)"
-      - "traefik.http.services.indexer.loadbalancer.server.port=9200"
     healthcheck:
       test: ["CMD", "curl", "-k", "-f", "https://localhost:9200"]
       interval: 30s
@@ -42,27 +31,24 @@ services:
       retries: 10
     volumes:
       - wazuh_indexer_data:/var/lib/wazuh-indexer
+      - wazuh_certs:/usr/share/wazuh-indexer/certs
     networks:
       - wazuh_back
-      - wazuh_front
 
   wazuh-manager:
     image: wazuh/wazuh-manager:4.8.2
     depends_on:
       - wazuh-indexer
+      - wazuh-cert-generator
     environment:
-      - INDEXER_URL=https://wazuh.indexer:9200
+      - INDEXER_URL=https://wazuh-indexer:9200
       - INDEXER_USERNAME=admin
       - INDEXER_PASSWORD=SecretPassword
       - API_USERNAME=wazuh-wui
       - API_PASSWORD=MyS3cr37P450r.*-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.manager.entrypoints=websecure"
-      - "traefik.http.routers.manager.rule=Host(`manager.local`)"
-      - "traefik.http.services.manager.loadbalancer.server.port=55000"
     volumes:
       - wazuh_manager_data:/var/ossec/data
+      - wazuh_certs:/etc/ossec/certs
     healthcheck:
       test: ["CMD", "bash", "-c", "ps aux | grep -q '[o]ssec-analysisd'"]
       interval: 30s
@@ -70,26 +56,22 @@ services:
       retries: 10
     networks:
       - wazuh_back
-      - wazuh_front
 
   wazuh-dashboard:
     image: wazuh/wazuh-dashboard:4.8.2
     depends_on:
       - wazuh-manager
       - wazuh-indexer
+      - wazuh-cert-generator
     environment:
       - INDEXER_USERNAME=admin
       - INDEXER_PASSWORD=SecretPassword
       - API_USERNAME=wazuh-wui
       - API_PASSWORD=MyS3cr37P450r.*-
       - WAZUH_API_URL=https://wazuh-manager:55000
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.rule=Host(`wazuh.local`)"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=5601"
+    volumes:
+      - wazuh_certs:/usr/share/wazuh-dashboard/certs
     networks:
-      - wazuh_front
       - wazuh_back
     deploy:
       replicas: 1
@@ -99,8 +81,7 @@ services:
 volumes:
   wazuh_manager_data:
   wazuh_indexer_data:
-  traefik_letsencrypt:
+  wazuh_certs:
 
 networks:
-  wazuh_front:
   wazuh_back:
