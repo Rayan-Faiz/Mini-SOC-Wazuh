@@ -1,9 +1,8 @@
-version: "3.9"
 
 services:
   # Certificate generator (runs once and exits)
   wazuh-cert-generator:
-    image: wazuh/wazuh-cert-tool:4.8.2
+    image: wazuh/wazuh-certs-generator:0.0.2
     environment:
       - WAZUH_CERTS_GEN=true
       - WAZUH_CERTS_OUTPUT=/certs
